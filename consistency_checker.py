@@ -60,7 +60,7 @@ def check_consistency(
     )
 
     # 调试日志
-    print("\n[ConsistencyChecker] Prompt >>>", prompt)
+    # print("\n[ConsistencyChecker] Prompt >>>", prompt)
 
     response = llm_adapter.invoke(prompt)
     if not response:

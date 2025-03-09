@@ -1,10 +1,13 @@
 # ui/chapters_tab.py
 # -*- coding: utf-8 -*-
 import os
-import customtkinter as ctk
 from tkinter import messagebox
+
+import customtkinter as ctk
+
 from ui.context_menu import TextWidgetContextMenu
-from utils import read_file, save_string_to_txt, clear_file_content
+from utils import clear_file_content, read_file, save_string_to_txt
+
 
 def build_chapters_tab(self):
     self.chapters_view_tab = self.tabview.add("Chapters Manage")
@@ -36,7 +39,7 @@ def build_chapters_tab(self):
     refresh_btn = ctk.CTkButton(top_frame, text="刷新章节列表", command=self.refresh_chapters_list, font=("Microsoft YaHei", 12))
     refresh_btn.grid(row=0, column=4, padx=5, pady=5, sticky="e")
 
-    self.chapter_view_text = ctk.CTkTextbox(self.chapters_view_tab, wrap="word", font=("Microsoft YaHei", 12))
+    self.chapter_view_text = ctk.CTkTextbox(self.chapters_view_tab, wrap="word", font=("Microsoft YaHei", 16))
     TextWidgetContextMenu(self.chapter_view_text)
     self.chapter_view_text.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
 

@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 import logging
 from typing import Optional
-from langchain_openai import ChatOpenAI, AzureChatOpenAI
+
+from azure.ai.inference import ChatCompletionsClient
+from azure.ai.inference.models import SystemMessage, UserMessage
+from azure.core.credentials import AzureKeyCredential
 from google import genai
 from google.genai import types
-from azure.ai.inference import ChatCompletionsClient
-from azure.core.credentials import AzureKeyCredential
-from azure.ai.inference.models import SystemMessage, UserMessage
+from langchain_openai import AzureChatOpenAI, ChatOpenAI
 from openai import OpenAI
 
 
@@ -91,6 +92,9 @@ class OpenAIAdapter(BaseLLMAdapter):
         if not response:
             logging.warning("No response from OpenAIAdapter.")
             return ""
+        # 打印出消耗的token数
+        print(f"Response: Tokens used: {response.response_metadata}")
+
         return response.content
 
 class GeminiAdapter(BaseLLMAdapter):
@@ -225,6 +229,7 @@ class AzureAIAdapter(BaseLLMAdapter):
     """
     def __init__(self, api_key: str, base_url: str, model_name: str, max_tokens: int, temperature: float = 0.7, timeout: Optional[int] = 600):
         import re
+
         # 匹配形如 https://xxx.services.ai.azure.com/models/chat/completions?api-version=xxx 的URL
         match = re.match(r'https://(.+?)\.services\.ai\.azure\.com(?:/models)?(?:/chat/completions)?(?:\?api-version=(.+))?', base_url)
         if match:
