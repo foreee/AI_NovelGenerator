@@ -24,6 +24,11 @@ def generate_novel_architecture_ui(self):
         return
 
     def task():
+        confirm = messagebox.askyesno("确认", "确定要生成小说架构吗？")
+        if not confirm:
+            self.enable_button_safe(self.btn_generate_architecture)
+            return
+
         self.disable_button_safe(self.btn_generate_architecture)
         try:
             interface_format = self.interface_format_var.get().strip()
@@ -38,6 +43,8 @@ def generate_novel_architecture_ui(self):
             genre = self.genre_var.get().strip()
             num_chapters = self.safe_get_int(self.num_chapters_var, 10)
             word_number = self.safe_get_int(self.word_number_var, 3000)
+            # 获取内容指导
+            user_guidance = self.user_guide_text.get("0.0", "end").strip()
 
             self.safe_log("开始生成小说架构...")
             Novel_architecture_generate(
@@ -52,7 +59,8 @@ def generate_novel_architecture_ui(self):
                 filepath=filepath,
                 temperature=temperature,
                 max_tokens=max_tokens,
-                timeout=timeout_val
+                timeout=timeout_val,
+                user_guidance=user_guidance  # 添加内容指导参数
             )
             self.safe_log("✅ 小说架构生成完成。请在 'Novel Architecture' 标签页查看或编辑。")
         except Exception:
@@ -68,6 +76,9 @@ def generate_chapter_blueprint_ui(self):
         return
 
     def task():
+        if not messagebox.askyesno("确认", "确定要生成章节目录吗？"):
+            self.enable_button_safe(self.btn_generate_chapter)
+            return
         self.disable_button_safe(self.btn_generate_directory)
         try:
             interface_format = self.interface_format_var.get().strip()
@@ -78,6 +89,7 @@ def generate_chapter_blueprint_ui(self):
             temperature = self.temperature_var.get()
             max_tokens = self.max_tokens_var.get()
             timeout_val = self.safe_get_int(self.timeout_var, 600)
+            user_guidance = self.user_guide_text.get("0.0", "end").strip()  # 新增获取用户指导
 
             self.safe_log("开始生成章节蓝图...")
             Chapter_blueprint_generate(
@@ -89,7 +101,8 @@ def generate_chapter_blueprint_ui(self):
                 filepath=filepath,
                 temperature=temperature,
                 max_tokens=max_tokens,
-                timeout=timeout_val
+                timeout=timeout_val,
+                user_guidance=user_guidance  # 新增参数
             )
             self.safe_log("✅ 章节蓝图生成完成。请在 'Chapter Blueprint' 标签页查看或编辑。")
         except Exception:
@@ -171,7 +184,64 @@ def generate_chapter_draft_ui(self,batch_event=None):
                 dialog.geometry("600x400")
                 text_box = ctk.CTkTextbox(dialog, wrap="word", font=("Microsoft YaHei", 12))
                 text_box.pack(fill="both", expand=True, padx=10, pady=10)
-                text_box.insert("0.0", prompt_text)
+
+                # 字数统计标签
+                wordcount_label = ctk.CTkLabel(dialog, text="字数：0", font=("Microsoft YaHei", 12))
+                wordcount_label.pack(side="left", padx=(10,0), pady=5)
+                
+                # 插入角色内容
+                final_prompt = prompt_text
+                role_names = [name.strip() for name in self.char_inv_text.get("0.0", "end").strip().split(',') if name.strip()]
+                role_lib_path = os.path.join(filepath, "角色库")
+                role_contents = []
+                
+                if os.path.exists(role_lib_path):
+                    for root, dirs, files in os.walk(role_lib_path):
+                        for file in files:
+                            if file.endswith(".txt") and os.path.splitext(file)[0] in role_names:
+                                file_path = os.path.join(root, file)
+                                try:
+                                    with open(file_path, 'r', encoding='utf-8') as f:
+                                        role_contents.append(f.read().strip())  # 直接使用文件内容，不添加重复名字
+                                except Exception as e:
+                                    self.safe_log(f"读取角色文件 {file} 失败: {str(e)}")
+                
+                if role_contents:
+                    role_content_str = "\n".join(role_contents)
+                    # 更精确的替换逻辑，处理不同情况下的占位符
+                    placeholder_variations = [
+                        "核心人物(可能未指定)：{characters_involved}",
+                        "核心人物：{characters_involved}",
+                        "核心人物(可能未指定):{characters_involved}",
+                        "核心人物:{characters_involved}"
+                    ]
+                    
+                    for placeholder in placeholder_variations:
+                        if placeholder in final_prompt:
+                            final_prompt = final_prompt.replace(
+                                placeholder,
+                                f"核心人物：\n{role_content_str}"
+                            )
+                            break
+                    else:  # 如果没有找到任何已知占位符变体
+                        lines = final_prompt.split('\n')
+                        for i, line in enumerate(lines):
+                            if "核心人物" in line and "：" in line:
+                                lines[i] = f"核心人物：\n{role_content_str}"
+                                break
+                        final_prompt = '\n'.join(lines)
+
+                text_box.insert("0.0", final_prompt)
+                # 更新字数函数
+                def update_word_count(event=None):
+                    text = text_box.get("0.0", "end-1c")
+                    text_length = len(text)
+                    wordcount_label.configure(text=f"字数：{text_length}")
+
+                text_box.bind("<KeyRelease>", update_word_count)
+                text_box.bind("<ButtonRelease>", update_word_count)
+                update_word_count()  # 初始化统计
+
                 button_frame = ctk.CTkFrame(dialog)
                 button_frame.pack(pady=10)
                 def on_confirm():
@@ -243,6 +313,10 @@ def finalize_chapter_ui(self,batch_event=None):
         return
 
     def task():
+        if not messagebox.askyesno("确认", "确定要定稿当前章节吗？"):
+            self.enable_button_safe(self.btn_finalize_chapter)
+            return
+
         self.disable_button_safe(self.btn_finalize_chapter)
         try:
             interface_format = self.interface_format_var.get().strip()
@@ -310,7 +384,7 @@ def finalize_chapter_ui(self,batch_event=None):
                 max_tokens=max_tokens,
                 timeout=timeout_val
             )
-            self.safe_log(f"✅ 第{chap_num}章定稿完成（已更新全局摘要、角色状态、向量库）。")
+            self.safe_log(f"✅ 第{chap_num}章定稿完成（已更新前文摘要、角色状态、向量库）。")
 
             final_text = read_file(chapter_file)
             self.master.after(0, lambda: self.show_chapter_in_textbox(final_text))
@@ -390,21 +464,59 @@ def import_knowledge_handler(self):
                 emb_format = self.embedding_interface_format_var.get().strip()
                 emb_model = self.embedding_model_name_var.get().strip()
 
-                self.safe_log(f"开始导入知识库文件: {selected_file}")
-                import_knowledge_file(
-                    embedding_api_key=emb_api_key,
-                    embedding_url=emb_url,
-                    embedding_interface_format=emb_format,
-                    embedding_model_name=emb_model,
-                    file_path=selected_file,
-                    filepath=self.filepath_var.get().strip()
-                )
-                self.safe_log("✅ 知识库文件导入完成。")
+                # 尝试不同编码读取文件
+                content = None
+                encodings = ['utf-8', 'gbk', 'gb2312', 'ansi']
+                for encoding in encodings:
+                    try:
+                        with open(selected_file, 'r', encoding=encoding) as f:
+                            content = f.read()
+                            break
+                    except UnicodeDecodeError:
+                        continue
+                    except Exception as e:
+                        self.safe_log(f"读取文件时发生错误: {str(e)}")
+                        raise
+
+                if content is None:
+                    raise Exception("无法以任何已知编码格式读取文件")
+
+                # 创建临时UTF-8文件
+                import tempfile
+                import os
+                with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', delete=False, suffix='.txt') as temp:
+                    temp.write(content)
+                    temp_path = temp.name
+
+                try:
+                    self.safe_log(f"开始导入知识库文件: {selected_file}")
+                    import_knowledge_file(
+                        embedding_api_key=emb_api_key,
+                        embedding_url=emb_url,
+                        embedding_interface_format=emb_format,
+                        embedding_model_name=emb_model,
+                        file_path=temp_path,
+                        filepath=self.filepath_var.get().strip()
+                    )
+                    self.safe_log("✅ 知识库文件导入完成。")
+                finally:
+                    # 清理临时文件
+                    try:
+                        os.unlink(temp_path)
+                    except:
+                        pass
+
             except Exception:
                 self.handle_exception("导入知识库时出错")
             finally:
                 self.enable_button_safe(self.btn_import_knowledge)
-        threading.Thread(target=task, daemon=True).start()
+
+        try:
+            thread = threading.Thread(target=task, daemon=True)
+            thread.start()
+        except Exception as e:
+            self.enable_button_safe(self.btn_import_knowledge)
+            messagebox.showerror("错误", f"线程启动失败: {str(e)}")
 
 def clear_vectorstore_handler(self):
     filepath = self.filepath_var.get().strip()
