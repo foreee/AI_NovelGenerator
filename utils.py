@@ -1,7 +1,8 @@
 # utils.py
 # -*- coding: utf-8 -*-
-import os
 import json
+import os
+
 
 def read_file(filename: str) -> str:
     """读取文件的全部内容，若文件不存在或异常则返回空字符串。"""
@@ -51,3 +52,23 @@ def save_data_to_json(data: dict, file_path: str) -> bool:
     except Exception as e:
         print(f"[save_data_to_json] 保存数据到JSON文件时出错: {e}")
         return False
+def count_text_stats(text):
+    '''统计文本内的中英文字和单词数（按单个字或单词计算）'''
+    import re
+
+    # 统计中文字符（按字符计算）
+    chinese_chars = re.findall(r'[\u4e00-\u9fa5]', text)
+    chinese_count = len(chinese_chars)
+    
+    # 统计英文单词（按单词计算，忽略标点）
+    english_words = re.findall(r'\b[a-zA-Z]+\b', text)
+    english_word_count = len(english_words)
+    
+    # 总字数 = 中文字数 + 英文单词数
+    total_count = chinese_count + english_word_count
+    
+    return {
+        "total_chars": total_count,
+        "chinese_chars": chinese_count,
+        "english_words": english_word_count
+    }

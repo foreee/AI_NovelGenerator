@@ -3,15 +3,21 @@
 """
 章节草稿生成及获取历史章节文本、短期摘要等
 """
-import os
 import logging
+import os
+
 from nltk import download
-from llm_adapters import create_llm_adapter
-from prompt_definitions import first_chapter_draft_prompt, next_chapter_draft_prompt, summarize_recent_chapters_prompt
+
 from chapter_directory_parser import get_chapter_info_from_blueprint
+from llm_adapters import create_llm_adapter
 from novel_generator.common import invoke_with_cleaning
-from utils import read_file, clear_file_content, save_string_to_txt
-from novel_generator.vectorstore_utils import get_relevant_context_from_vector_store
+from novel_generator.vectorstore_utils import \
+    get_relevant_context_from_vector_store
+from prompt_definitions import (first_chapter_draft_prompt,
+                                next_chapter_draft_prompt,
+                                summarize_recent_chapters_prompt)
+from utils import clear_file_content, read_file, save_string_to_txt
+
 
 def get_last_n_chapters_text(chapters_dir: str, current_chapter_num: int, n: int = 3) -> list:
     """
@@ -88,6 +94,8 @@ def build_chapter_prompt(
     embedding_retrieval_k: int = 2,
     interface_format: str = "openai",
     max_tokens: int = 2048,
+    topic: str = "",
+    genre: str = "小说",
     timeout: int = 600
 ) -> str:
     """
@@ -133,7 +141,7 @@ def build_chapter_prompt(
             novel_setting=novel_architecture_text
         )
     else:
-        recent_3_texts = get_last_n_chapters_text(chapters_dir, novel_number, n=3)
+        recent_3_texts = get_last_n_chapters_text(chapters_dir, novel_number, n=5)
         short_summary, next_chapter_keywords = summarize_recent_chapters(
             interface_format=interface_format,
             api_key=api_key,
@@ -147,8 +155,8 @@ def build_chapter_prompt(
         previous_chapter_excerpt = ""
         for text_block in reversed(recent_3_texts):
             if text_block.strip():
-                if len(text_block) > 1500:
-                    previous_chapter_excerpt = text_block[-1500:]
+                if len(text_block) > 500:
+                    previous_chapter_excerpt = text_block[-500:]
                 else:
                     previous_chapter_excerpt = text_block
                 break
@@ -159,7 +167,8 @@ def build_chapter_prompt(
             embedding_url,
             embedding_model_name
         )
-        retrieval_query = short_summary + " " + next_chapter_keywords
+        retrieval_query = short_summary + " \n关键词：" + next_chapter_keywords
+        print(f"[DEBUG] Retrieval query: {retrieval_query} \n {filepath}")
         relevant_context = get_relevant_context_from_vector_store(
             embedding_adapter=embedding_adapter,
             query=retrieval_query,
@@ -167,7 +176,7 @@ def build_chapter_prompt(
             k=embedding_retrieval_k
         )
         if not relevant_context.strip():
-            relevant_context = "（无检索到的上下文）"
+            relevant_context = retrieval_query if retrieval_query else "（无检索到的上下文）"
         prompt_text = next_chapter_draft_prompt.format(
             novel_number=novel_number,
             word_number=word_number,
@@ -187,7 +196,9 @@ def build_chapter_prompt(
             global_summary=global_summary_text,
             character_state=character_state_text,
             context_excerpt=relevant_context,
-            previous_chapter_excerpt=previous_chapter_excerpt
+            previous_chapter_excerpt=previous_chapter_excerpt,
+            topic=topic,
+            genre=genre,
         )
     return prompt_text
 

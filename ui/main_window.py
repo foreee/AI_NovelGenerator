@@ -1,36 +1,46 @@
 # ui/main_window.py
 # -*- coding: utf-8 -*-
+import logging
 import os
 import threading
-import logging
-import traceback
-import customtkinter as ctk
 import tkinter as tk
+import traceback
 from tkinter import filedialog, messagebox
 
-from config_manager import load_config, save_config, test_llm_config, test_embedding_config
-from utils import read_file, save_string_to_txt, clear_file_content
-from tooltips import tooltips
+import customtkinter as ctk
 
+from config_manager import (load_config, save_config, test_embedding_config,
+                            test_llm_config)
+from tooltips import tooltips
+from ui.chapters_tab import (build_chapters_tab, load_chapter_content,
+                             next_chapter, on_chapter_selected, prev_chapter,
+                             refresh_chapters_list, save_current_chapter)
+from ui.character_tab import (build_character_tab, load_character_state,
+                              save_character_state)
+from ui.config_tab import (build_config_tabview, load_config_btn,
+                           save_config_btn)
 from ui.context_menu import TextWidgetContextMenu
-from ui.main_tab import build_main_tab, build_left_layout, build_right_layout
-from ui.config_tab import build_config_tabview, load_config_btn, save_config_btn
-from ui.novel_params_tab import build_novel_params_area, build_optional_buttons_area
-from ui.generation_handlers import (
-    generate_novel_architecture_ui,
-    generate_chapter_blueprint_ui,
-    generate_chapter_draft_ui,
-    finalize_chapter_ui,
-    do_consistency_check,
-    import_knowledge_handler,
-    clear_vectorstore_handler,
-    show_plot_arcs_ui
-)
-from ui.setting_tab import build_setting_tab, load_novel_architecture, save_novel_architecture
-from ui.directory_tab import build_directory_tab, load_chapter_blueprint, save_chapter_blueprint
-from ui.character_tab import build_character_tab, load_character_state, save_character_state
-from ui.summary_tab import build_summary_tab, load_global_summary, save_global_summary
-from ui.chapters_tab import build_chapters_tab, refresh_chapters_list, on_chapter_selected, load_chapter_content, save_current_chapter, prev_chapter, next_chapter
+from ui.directory_tab import (build_directory_tab, load_chapter_blueprint,
+                              save_chapter_blueprint)
+from ui.generation_handlers import (batch_generate_chapters_ui,
+                                    clear_vectorstore_handler,
+                                    do_consistency_check,
+                                    execute_batch_generation,
+                                    finalize_chapter_ui,
+                                    generate_chapter_blueprint_ui,
+                                    generate_chapter_draft_ui,
+                                    generate_novel_architecture_ui,
+                                    import_knowledge_handler,
+                                    show_plot_arcs_ui)
+from ui.main_tab import build_left_layout, build_main_tab, build_right_layout
+from ui.novel_params_tab import (build_novel_params_area,
+                                 build_optional_buttons_area)
+from ui.setting_tab import (build_setting_tab, load_novel_architecture,
+                            save_novel_architecture)
+from ui.summary_tab import (build_summary_tab, load_global_summary,
+                            save_global_summary)
+from utils import clear_file_content, read_file, save_string_to_txt
+
 
 class NovelGeneratorGUI:
     """
@@ -46,7 +56,7 @@ class NovelGeneratorGUI:
             pass
         self.master.geometry("1350x840")
 
-        # --------------- 配置文件路径 ---------------
+        # --------------- 配置文件路径 --------------- 
         self.config_file = "config.json"
         self.loaded_config = load_config(self.config_file)
 
@@ -121,6 +131,7 @@ class NovelGeneratorGUI:
             self.scene_location_var = ctk.StringVar(value="")
             self.time_constraint_var = ctk.StringVar(value="")
             self.user_guidance_default = ""
+        self.plot_arcs = "" # 记录未解决冲突或剧情要点
 
         # --------------- 整体Tab布局 ---------------
         self.tabview = ctk.CTkTabview(self.master)
@@ -249,3 +260,5 @@ class NovelGeneratorGUI:
     test_llm_config = test_llm_config
     test_embedding_config = test_embedding_config
     browse_folder = browse_folder
+    batch_generate_chapters_ui = batch_generate_chapters_ui
+    execute_batch_generation = execute_batch_generation

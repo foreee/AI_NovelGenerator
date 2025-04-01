@@ -293,13 +293,13 @@ class VolcanoEngineAIAdapter(BaseLLMAdapter):
         response = self._client.chat.completions.create(
             model=self.model_name,  # bot-20250223190248-2bq5k 为您当前的智能体的ID，注意此处与Chat API存在差异。差异对比详见 SDK使用指南
             messages=[
-                {"role": "system", "content": "你是DeepSeek，是一个 AI 人工智能助手"},
+                {"role": "system", "content": "你是一个 AI 人工智能助手"},
                 {"role": "user", "content": prompt},
             ],
         )
         # response = self._client.invoke(prompt)
         if not response:
-            logging.warning("No response from DeepSeekAdapter.")
+            logging.warning("No response from VolcanoEngineAIAdapter.")
             return ""
         return response.choices[0].message.content
 

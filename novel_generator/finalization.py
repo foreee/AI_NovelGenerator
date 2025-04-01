@@ -3,14 +3,16 @@
 """
 定稿章节和扩写章节（finalize_chapter、enrich_chapter_text）
 """
-import os
 import logging
-from llm_adapters import create_llm_adapter
+import os
+
 from embedding_adapters import create_embedding_adapter
-from prompt_definitions import summary_prompt, update_character_state_prompt
+from llm_adapters import create_llm_adapter
 from novel_generator.common import invoke_with_cleaning
-from utils import read_file, clear_file_content, save_string_to_txt
 from novel_generator.vectorstore_utils import update_vector_store
+from prompt_definitions import summary_prompt, update_character_state_prompt
+from utils import clear_file_content, read_file, save_string_to_txt
+
 
 def finalize_chapter(
     novel_number: int,
@@ -111,9 +113,12 @@ def enrich_chapter_text(
         max_tokens=max_tokens,
         timeout=timeout
     )
-    prompt = f"""以下章节文本较短，请在保持剧情连贯的前提下进行扩写，使其更充实，接近 {word_number} 字左右：
+    prompt = f"""以下章节文本较短，请在保持剧情连贯的前提下进行扩写，使其更充实，接近 {word_number} 字或单词左右：
 原内容：
 {chapter_text}
+
+# 要求：
+- 仅给出最终文本，不要解释任何内容。
 """
     enriched_text = invoke_with_cleaning(llm_adapter, prompt)
     return enriched_text if enriched_text else chapter_text

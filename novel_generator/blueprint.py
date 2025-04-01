@@ -3,13 +3,16 @@
 """
 章节蓝图生成（Chapter_blueprint_generate 及辅助函数）
 """
+import logging
 import os
 import re
-import logging
-from novel_generator.common import invoke_with_cleaning
+
 from llm_adapters import create_llm_adapter
-from prompt_definitions import chapter_blueprint_prompt, chunked_chapter_blueprint_prompt
-from utils import read_file, clear_file_content, save_string_to_txt
+from novel_generator.common import invoke_with_cleaning
+from prompt_definitions import (chapter_blueprint_prompt,
+                                chunked_chapter_blueprint_prompt)
+from utils import clear_file_content, read_file, save_string_to_txt
+
 
 def compute_chunk_size(number_of_chapters: int, max_tokens: int) -> int:
     """
@@ -86,7 +89,9 @@ def Chapter_blueprint_generate(
         open(filename_dir, "w", encoding="utf-8").close()
 
     existing_blueprint = read_file(filename_dir).strip()
-    chunk_size = compute_chunk_size(number_of_chapters, max_tokens)
+    # chunk_size = compute_chunk_size(number_of_chapters, max_tokens)
+    # 统一每次生成30章目录
+    chunk_size = 20
     logging.info(f"Number of chapters = {number_of_chapters}, computed chunk_size = {chunk_size}.")
 
     if existing_blueprint:
@@ -100,6 +105,7 @@ def Chapter_blueprint_generate(
         current_start = max_existing_chap + 1
         while current_start <= number_of_chapters:
             current_end = min(current_start + chunk_size - 1, number_of_chapters)
+            print(f"current_start: {current_start}, current_end: {current_end}")
             limited_blueprint = limit_chapter_blueprint(final_blueprint, 100)
             chunk_prompt = chunked_chapter_blueprint_prompt.format(
                 novel_architecture=architecture_text,
@@ -119,6 +125,7 @@ def Chapter_blueprint_generate(
             clear_file_content(filename_dir)
             save_string_to_txt(final_blueprint.strip(), filename_dir)
             current_start = current_end + 1
+            return # 仅生成一个 chunk
 
         logging.info("All chapters blueprint have been generated (resumed chunked).")
         return
@@ -165,5 +172,6 @@ def Chapter_blueprint_generate(
         clear_file_content(filename_dir)
         save_string_to_txt(final_blueprint.strip(), filename_dir)
         current_start = current_end + 1
+        break # 仅生成一个 chunk
 
     logging.info("Novel_directory.txt (chapter blueprint) has been generated successfully (chunked).")
