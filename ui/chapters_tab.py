@@ -45,8 +45,10 @@ def build_chapters_tab(self):
     self.chapter_view_text = ctk.CTkTextbox(self.chapters_view_tab, wrap="word", font=("Microsoft YaHei", 16))
     
     def update_word_count(event=None):
+        """更新字数统计"""
+        from utils import count_text_stats
         text = self.chapter_view_text.get("0.0", "end-1c")
-        text_length = len(text)
+        text_length = count_text_stats(text)['total_chars']
         self.chapters_word_count_label.configure(text=f"字数：{text_length}")
     
     self.chapter_view_text.bind("<KeyRelease>", update_word_count)

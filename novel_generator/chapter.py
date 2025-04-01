@@ -475,32 +475,6 @@ def build_chapter_prompt(
             max_tokens=max_tokens,
             timeout=timeout
         )
-    #     if not relevant_context.strip():
-    #         relevant_context = retrieval_query if retrieval_query else "（无检索到的上下文）"
-    #     prompt_text = next_chapter_draft_prompt.format(
-    #         novel_number=novel_number,
-    #         word_number=word_number,
-    #         chapter_title=chapter_title,
-    #         chapter_role=chapter_role,
-    #         chapter_purpose=chapter_purpose,
-    #         suspense_level=suspense_level,
-    #         foreshadowing=foreshadowing,
-    #         plot_twist_level=plot_twist_level,
-    #         chapter_summary=chapter_summary,
-    #         characters_involved=characters_involved,
-    #         key_items=key_items,
-    #         scene_location=scene_location,
-    #         time_constraint=time_constraint,
-    #         user_guidance=user_guidance,
-    #         novel_setting=novel_architecture_text,
-    #         global_summary=global_summary_text,
-    #         character_state=character_state_text,
-    #         context_excerpt=relevant_context,
-    #         previous_chapter_excerpt=previous_chapter_excerpt,
-    #         topic=topic,
-    #         genre=genre,
-    #     )
-    # return prompt_text
         
     except Exception as e:
         logging.error(f"知识处理流程异常：{str(e)}")
@@ -534,7 +508,9 @@ def build_chapter_prompt(
         next_chapter_foreshadowing=next_chapter_foreshadow,
         next_chapter_plot_twist_level=next_chapter_twist,
         next_chapter_summary=next_chapter_summary,
-        filtered_context=filtered_context
+        filtered_context=filtered_context,
+        topic=topic,
+        genre=genre,
     )
 
 def generate_chapter_draft(

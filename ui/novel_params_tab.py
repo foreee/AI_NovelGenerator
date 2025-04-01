@@ -123,14 +123,14 @@ def build_optional_buttons_area(self, start_row=2):
         command=self.clear_vectorstore_handler, font=("Microsoft YaHei", 12), width=100
     )
     self.btn_clear_vectorstore.grid(row=0, column=2, padx=5, pady=5, sticky="ew")
-    # 添加批量生成按钮
-    self.btn_batch_generate = ctk.CTkButton(self.optional_btn_frame, text="批量生成章节", command=self.batch_generate_chapters_ui, font=("Microsoft YaHei", 12))
-    self.btn_batch_generate.grid(row=0, column=4, padx=5, pady=5, sticky="ew")
     self.plot_arcs_btn = ctk.CTkButton(
         self.optional_btn_frame, text="查看剧情要点", command=self.show_plot_arcs_ui,
         font=("Microsoft YaHei", 12), width=100
     )
-    self.plot_arcs_btn.grid(row=0, column=3, padx=5, pady=5, sticky="ew")
+    self.plot_arcs_btn.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
+    # 添加批量生成按钮
+    self.btn_batch_generate = ctk.CTkButton(self.optional_btn_frame, text="批量生成章节", command=self.batch_generate_chapters_ui, font=("Microsoft YaHei", 12), width=100)
+    self.btn_batch_generate.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
 
     # 新增角色库按钮
     self.role_library_btn = ctk.CTkButton(
